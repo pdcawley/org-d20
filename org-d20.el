@@ -81,6 +81,11 @@ Rather than starting again for each type."
   :type 'boolean
   :group 'org-d20)
 
+(defcustom org-d20-number-solo-monsters nil
+  "Non-nil means that a solo monster will show up as ``Monster 1'' in the initiative table."
+  :type 'boolean
+  :group 'org-d20)
+
 (defvar org-d20-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c , i") #'org-d20-initiative-dwim)
@@ -240,9 +245,11 @@ the best N of them, e.g., 4d6k3."
            (while (>= monsters-left 1)
              (let ((hp (int-to-string (cdr (org-d20--roll hd-input)))))
                (push (list
-                      "" (concat name-input
-                                 " "
-                                 (org-d20--monster-number monster))
+                      "" (if (org-d20--monster-needs-a-numberp num-input)
+                             (concat name-input
+                                     " "
+                                     (org-d20--monster-number monster))
+                           name-input)
                       (org-d20--num-to-term init-input) init hp "0")
                      rows))
              (setq monsters-left (1- monsters-left)
@@ -452,6 +459,17 @@ the best N of them, e.g., 4d6k3."
 ;; Roll a d20, adding or subtracting a modifier
 (defun org-d20--d20-plus (&optional mod)
   (+ 1 mod (random 20)))
+
+(defun org-d20--monster-needs-a-numberp (monster-group-size)
+  "Should we add a number to the monster in the initiative table?
+
+If there's only one monster in the group, and
+`org-d20-continue-monster-numbering' is false, there's no need to add
+a number."
+  (or org-d20-number-solo-monsters
+      org-d20-continue-monster-numbering
+      (> monster-group-size 1)))
+
 
 (provide 'org-d20)
 ;;; org-d20.el ends here
